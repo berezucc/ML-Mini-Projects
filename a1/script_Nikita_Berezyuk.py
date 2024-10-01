@@ -28,7 +28,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, train_s
 # Create a decision tree classifier. Then Train the classifier using the training dataset created earlier.
 # To measure the quality of a split, using the entropy criteria.
 # Ensure that nodes with less than 6 training instances are not further split
-clf = tree.DecisionTreeClassifier(criterion = "entropy", max_depth = 6)  #(4 points) 
+clf = tree.DecisionTreeClassifier(criterion = "entropy", min_samples_split = 6)  #(4 points) 
 clf = clf.fit(X_train, y_train)    #(4 points) 
 
 # Apply the decision tree to classify the data 'testData'.
@@ -64,42 +64,48 @@ for depth in depthOptions: #(1 point)
     testAccuracy.append(accuracy_score(y_test, y_predTest)) #(1 point) 
 
 # Plot of training and test accuracies vs the tree depths (use different markers of different colors)
-# ______.______(______,______,______,______,______,______) #(3 points) 
 plt.plot(depthOptions, trainAccuracy, marker='o', label='Training Accuracy', color='blue')  #(3 points) 
 plt.plot(depthOptions, testAccuracy, marker='x', label='Test Accuracy', color='green')
 plt.legend(['Training Accuracy','Test Accuracy']) # add a legend for the training accuracy and test accuracy (1 point) 
 plt.xlabel('Tree Depth') # name the horizontal axis 'Tree Depth' (1 point) 
 plt.ylabel('Classifier Accuracy') # name the horizontal axis 'Classifier Accuracy' (1 point) 
-plt.show()
 
 # Fill out the following blanks: #(4 points (2 points per blank)) 
 """ 
-According to the test error, the best model to select is when the maximum depth is equal to ____, approximately. 
-But, we should not use select the hyperparameters of our model using the test data, because _____.
+According to the test error, the best model to select is when the maximum depth is equal to 3, approximately. 
+But, we should not use select the hyperparameters of our model using the test data, because it would lead to overfitting 
+of the model with test data. These hyperparameters showed promising results for the test set, but these results are 
+not guaranteed using those parameters on a new random sample of data. 
 """
 
 ### PART 2.2 ###
 # Use sklearn's GridSearchCV function to perform an exhaustive search to find the best tree depth and the minimum number of samples to split a node
 # Hint: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
 # Define the parameters to be optimized: the max depth of the tree and the minimum number of samples to split a node
-parameters = {______:______, ______:______} #(6 points)
+parameters = {'max_depth':range(1, 16), 'min_samples_split':range(2, 11)} #(6 points)
 # We will still grow a decision tree classifier by measuring the quality of a split using the entropy criteria. 
-clf = ______(______) #(6 points)
-clf.fit(______, ______) #(4 points)
-tree_model = clf.______ #(4 points)
-print("The maximum depth of the tree sis", __________, 
-      'and the minimum number of samples required to split a node is', _______) #(6 points)
+clf = GridSearchCV(tree.DecisionTreeClassifier(criterion="entropy"), parameters, cv=10) #(6 points)
+clf.fit(X_train, y_train) #(4 points)
+tree_model = clf.best_estimator_ #(4 points)
+print("The maximum depth of the tree is", tree_model.max_depth, 
+      'and the minimum number of samples required to split a node is', tree_model.min_samples_split) #(6 points)
 
 # The best model is tree_model. Visualize that decision tree (tree_model). Set the font size the 12 
-_ = ______.______(______,filled=True, ______) #(4 points)
+_ = tree.plot_tree(tree_model, filled=True, fontsize=12) #(4 points)
+plt.show()
 
 # Fill out the following blank: #(2 points)
 """ 
-This method for tuning the hyperparameters of our model is acceptable, because ________. 
+This method for tuning the hyperparameters of our model is acceptable, because it does not overfit and instead evaluates on different folds of data through cross-validation.
 """
 
 # Explain below what is tenfold Stratified cross-validation?  #(4 points)
 """
-______
+The argument `cv` in GridSearchCV is the cross-validation splitting strategy, which is the number of folds/partitions of a datest.
+Tenfold cross-validation means that there are 10 folds / partitions of the data set, where the partition is the test set and the remaining data is the training set.
+Stratified cross-validation adds an extra condition that guarantees that there is an equal percentage of class labels in training and test, useful in imbalanced decision trees.
+
+Thus, tenfold Stratified cross-validation is a specific type of cross-validation where the dataset is divided into 10 folds, while guaranteeing an equal balance of class labels 
+in the training and test sets.  
 """
 
