@@ -109,11 +109,29 @@ Two different examples of this approach are the One-vs-Rest and One-vs-One strat
 
 # Explain below how the One-vs-Rest method works for multi-class classification # 12 points
 """
-Your explanation goes here
+One-vs-Rest for multi-class classification takes a multi-class problem (more than 2 classes) and splits them into multiple binary classification problems. For every single class, it will train a classifier separately to distinguish the class from all other classes combined. 
+At the time of prediction, all the classifiers give a score and the class corresponding to the highest score is chosen for the final prediction. 
+
+An example of binary classification splitting for classes 'red', 'blue', and 'green' would be:
+Split 1: Classifier for red & [blue, green]
+Split 2: Classifier for blue & [red, green]
+Split 3: Classifier for green & [red, green]
+
+OvR is simple to implement and works fine for problems with a smaller number of classes but may struggle with imbalanced datasets if one class has much fewer samples than the others. 
 """
 
 # Explain below how the One-Vs-One method works for multi-class classification # 11 points
+
 """
-Your explanation goes here
+One-vs-One designs a classifier for every different class pair from the dataset. Each of them will be trained to distinguish between two specified classes, and a new instance is put before all these classifiers. 
+Essentially, a dataset is split into each class versus every other class. The class that gets the maximum vote from all the classifiers is predicted as the final output (majority voting). 
+
+An example of binary classification for classes 'red', 'blue', and 'green' would be:
+Split 1: Classifier for red vs blue
+Split 2: Classifier for red vs green
+Split 3: Classifier for blue vs green
+
+Although the OvO technique can deal with overlapping classes very well, it is not computationally effective. A dataset with large number of classes could be problematic as a distinct model needs to be created for each class.
+With many classes comes a large number of models and the need to evaluate each instance multiple times during prediction
 """
 
