@@ -1,5 +1,6 @@
 """
 Assignment 3: Neural networks
+
 """
 
 import matplotlib.pyplot as plt
@@ -12,6 +13,7 @@ PART 1: Implementing a neural network using Keras
 The goal is to get introduced to Keras. 
 Start by installing TensorFlow.
 Keras is a high-level Deep Learning API that allows you to easily build, train, evaluate and execute all sorts of neural network
+
 """
 
 # From Keras, load the MNIST digits classification dataset
