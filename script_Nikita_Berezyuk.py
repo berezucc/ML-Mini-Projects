@@ -8,7 +8,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -26,12 +26,6 @@ data = pd.read_csv(file_path).set_index('Unnamed: 0')
 """
 1. Data Pre-processing
 """
-### Debugging
-# print(data.head()) # Print the first 5 rows of the dataset
-# print(data.shape)
-# print(data.isnull().sum())
-# print(data.info())
-
 ### Check for any duplicate tracks and artists, caused by being refernced in different albums
 # print(data.groupby(['track_name', 'artists']).size().reset_index(name='count').sort_values('count', ascending=False)) 
 data = data.drop_duplicates(subset=['track_name', 'artists'], keep='first')
@@ -55,7 +49,7 @@ data = data[~((data < lower_bound) | (data > upper_bound)).any(axis=1)]
 """
 2. Data Exploration
 """
-# Compute correlation matrix (https://www.displayr.com/what-is-a-correlation-matrix/)
+### Compute correlation matrix (https://www.displayr.com/what-is-a-correlation-matrix/)
 correlation_matrix = data.corr()
 
 # Plot heatmap
@@ -65,8 +59,10 @@ plt.title('Feature Correlation Heatmap')
 plt.show()
 
 # energy and loudness features have high correlation. Since energy is not an objectively measured metric, I will drop it.
-data = data.drop(['energy', 'acousticness', 'time_signature', 'popularity', 'duration_ms'], axis=1)
-# data = data.drop(['energy', 'acousticness', 'key', 'mode', 'time_signature', 'popularity', 'duration_ms'], axis=1)
+# data = data.drop(['energy'], axis=1)
+
+# reduce dimensionality with low impact feature
+data = data.drop(['time_signature'], axis=1)
 
 ### Standardizing the data
 scaler = StandardScaler()
@@ -101,7 +97,7 @@ plt.ylabel('Inertia')
 plt.show()
 
 ### Applying K-means with the optimal number of clusters from elbow method
-optimal_clusters = 6
+optimal_clusters = 5
 kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
 clusters = kmeans.fit_predict(scaled_data)
 data['Cluster'] = clusters
@@ -109,8 +105,8 @@ data['Cluster'] = clusters
 """
 4. Visualize Clusters
 """
-### Reduce dimensions for visualization
-pca = PCA(n_components=2)  # Reduce to  2 components
+### Reduce to 2 dimensions for visualization
+pca = PCA(n_components=2)
 reduced_data = pca.fit_transform(scaled_data)
 reduced_df = pd.DataFrame(reduced_data, columns=['PCA1', 'PCA2'])
 reduced_df['Cluster'] = clusters
@@ -136,54 +132,29 @@ print("Cluster Summary:")
 print(cluster_summary)
 
 ### Display feature patterns within a sample of the clusters
-# to_plot = data.sample(1000)
-# sns.pairplot(to_plot, vars=['loudness', 'acousticness', 'valence'], hue='Cluster', palette='Set1', corner=True)
-# plt.title("Cluster Visualization")
-# plt.show()
+to_plot = data.sample(1000)
+sns.pairplot(to_plot, vars=['energy', 'acousticness', 'valence'], hue='Cluster', palette='Set1', corner=True)
+plt.title("Cluster Visualization")
+plt.show()
 
-# # Sample Songs from Each Cluster
-# data_with_metadata = pd.concat([metadata, data], axis=1)
-# for i in range(data['Cluster'].nunique()):
-#     print(f"Cluster {i}")
-#     print("=" * 9)
-#     sampled_songs = data_with_metadata[data_with_metadata['Cluster'] == i].sample(5, random_state=42)
-#     for index, row in sampled_songs.iterrows():
-#         print(f"{row['track_name']} - {row['artists']} ({row['track_genre']})")
-#     print()
+# Sample Songs from Each Cluster
+data_with_metadata = pd.concat([metadata, data], axis=1)
+for i in range(data['Cluster'].nunique()):
+    print(f"Cluster {i}")
+    print("=" * 9)
+    sampled_songs = data_with_metadata[data_with_metadata['Cluster'] == i].sample(5, random_state=42)
+    for index, row in sampled_songs.iterrows():
+        print(f"{row['track_name']} - {row['artists']} ({row['track_genre']})")
+    print()
 
 """
-6. Silhouette Analysis
+6. Evaluate Clustering Metrics
 """
 # Compute the silhouette score for the clustering
 silhouette_avg = silhouette_score(scaled_data, clusters)
+ch_score = calinski_harabasz_score(scaled_data, clusters)
+db_score = davies_bouldin_score(scaled_data, clusters)
+
 print(f"Average Silhouette Score for {optimal_clusters} clusters: {silhouette_avg:.2f}")
-
-"""
-7. Determine Best Number of Clusters Using Silhouette Analysis
-"""
-# Compute silhouette scores for a range of cluster numbers
-silhouette_scores = []
-cluster_range = range(2, 11)  # Start from 2 clusters, as silhouette score is undefined for 1 cluster
-
-for n_clusters in cluster_range:
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    cluster_labels = kmeans.fit_predict(scaled_data)
-    score = silhouette_score(scaled_data, cluster_labels)
-    silhouette_scores.append(score)
-    print(f"Silhouette Score for {n_clusters} clusters: {score:.2f}")
-
-# Plot silhouette scores to find the optimal number of clusters
-plt.figure(figsize=(10, 6))
-plt.plot(cluster_range, silhouette_scores, marker='o')
-plt.title("Silhouette Analysis for Optimal Number of Clusters")
-plt.xlabel("Number of Clusters")
-plt.ylabel("Silhouette Score")
-plt.show()
-
-from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score
-
-calinski_score = calinski_harabasz_score(scaled_data, clusters)
-davies_bouldin = davies_bouldin_score(scaled_data, clusters)
-
-print(f"Calinski-Harabasz Index: {calinski_score:.2f}")
-print(f"Davies-Bouldin Index: {davies_bouldin:.2f}")
+print(f"Calinski-Harabasz Score: {ch_score:.2f}")
+print(f"Davies-Bouldin Score: {db_score:.2f}")
